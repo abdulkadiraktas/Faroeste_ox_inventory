@@ -1,12 +1,12 @@
-name: Build
-
+name: Build and Release
 on:
   push:
-    branches:
+    tags:
+      - "v*.*.*"
       - feat/redm
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,9 +14,24 @@ jobs:
 
     - name: Install pnpm
       run: npm install -g pnpm
-
+      
     - name: Install dependencies
-      run: pnpm install
-
+      run: pnpm i --frozen-lockfile
+      working-directory: web
+      
     - name: Build
-      run: pnpm build
+      run: pnpm build     
+      working-directory: web
+
+    - name: Create Release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        id: auto_release
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          title: "${{ env.RELEASE_VERSION }}"
+          prerelease: false
+          files: ox_inventory.zip
+
+        env:
+          CI: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
