@@ -1,4 +1,16 @@
-return {
+return {	
+	['water'] = {
+		label = 'Water',
+		weight = 500,
+		client = {
+			status = { thirst = 200000 },
+			anim = { dict = 'amb_rest_drunk@world_human_drinking@male_a@idle_a', clip = 'idle_a', blendIn = 1.0, blendOut=8.0, duration=-1, flag=31 },
+			prop = { model = `P_BOTTLE008X`, pos = vector3(0.06, -0.06, -0.06), rot = vector3(-61, 50, 17) },
+			usetime = 2500,
+			cancel = true,
+			notification = 'You drank some refreshing water'
+		}
+	},
 	['testburger'] = {
 		label = 'Test Burger',
 		weight = 220,
@@ -171,19 +183,6 @@ return {
 			prop = { model = `prop_food_mustard`, pos = vec3(0.01, 0.0, -0.07), rot = vec3(1.0, 1.0, -1.5) },
 			usetime = 2500,
 			notification = 'You.. drank mustard'
-		}
-	},
-
-	['water'] = {
-		label = 'Water',
-		weight = 500,
-		client = {
-			status = { thirst = 200000 },
-			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
-			prop = { model = `prop_ld_flow_bottle`, pos = vec3(0.03, 0.03, 0.02), rot = vec3(0.0, 0.0, -1.5) },
-			usetime = 2500,
-			cancel = true,
-			notification = 'You drank some refreshing water'
 		}
 	},
 
