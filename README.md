@@ -6,6 +6,7 @@ A complete inventory system for FiveM, implementing items, weapons, shops, and m
 ![](https://img.shields.io/github/downloads/overextended/ox_inventory/latest/total?logo=github)
 ![](https://img.shields.io/github/contributors/overextended/ox_inventory?logo=github)
 ![](https://img.shields.io/github/v/release/overextended/ox_inventory?logo=github) 
+[![Build](https://github.com/abdulkadiraktas/Faroeste_ox_inventory/actions/workflows/build.yml/badge.svg)](https://github.com/abdulkadiraktas/Faroeste_ox_inventory/actions/workflows/build.yml)
 
 ## 📚 Documentation
 
