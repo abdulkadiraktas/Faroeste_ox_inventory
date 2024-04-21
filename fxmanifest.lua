@@ -5,7 +5,7 @@ games { 'rdr3', 'gta5' }
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 name 'ox_inventory'
 author 'Overextended'
-version '1.0.0'
+version '0.0.1'
 repository 'https://github.com/overextended/ox_inventory'
 description 'Slot-based inventory with item metadata support'
 
