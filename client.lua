@@ -748,7 +748,7 @@ local function registerCommands()
 	end
 
 	local function tryOpenSecondaryInventory(self)
-		if primary:getCurrentKey() == self:getCurrentKey() then
+		if primary and primary:getCurrentKey() == self:getCurrentKey() then
 			return warn(("secondary inventory keybind '%s' disabled (keybind cannot match primary inventory keybind)"):format(self:getCurrentKey()))
 		end
 
