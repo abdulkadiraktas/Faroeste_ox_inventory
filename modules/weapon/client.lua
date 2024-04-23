@@ -40,12 +40,35 @@ function Weapon.Equip(item, data, noWeaponAnim)
 
 	item.hash = data.hash
 	item.ammo = data.ammoname
-	item.melee = GetWeaponDamageType(data.hash) == 2 and 0
+	if IS_GTAV then
+		item.melee = GetWeaponDamageType(data.hash) == 2 and 0
+	end
+	if IS_RDR3 then
+		item.melee = IsWeaponMeleeWeapon(data.hash)
+	end
 	item.timer = 0
 	item.throwable = data.throwable
 	item.group = GetWeapontypeGroup(item.hash)
 
-	GiveWeaponToPed(playerPed, data.hash, 0, false, true)
+	if IS_GTAV then
+		GiveWeaponToPed(playerPed, data.hash, 0, false, true)
+	elseif IS_RDR3 then
+
+		if not HasPedGotWeapon(playerPed, data.hash, 0, false) then
+
+			local currentWeaponAmmo = GetAmmoInPedWeapon(playerPed, data.hash)
+
+			-- RemoveAmmoFromPed
+			N_0xf4823c813cb8277d(playerPed, data.hash, currentWeaponAmmo, `REMOVE_REASON_DEBUG`)
+
+			--[[ GiveWeaponToPed ]]
+			if data.throwable then
+				Citizen.InvokeNative(0xB282DC6EBD803C75, playerPed, data.hash, tonumber(item.count), true, 0) -- GIVE_DELAYED_WEAPON_TO_PED
+			else	
+				Citizen.InvokeNative(0xB282DC6EBD803C75, playerPed, data.hash, item.metadata.ammo, true, 0) -- GIVE_DELAYED_WEAPON_TO_PED
+			end
+		end
+	end
 
 	if item.metadata.tint then SetPedWeaponTintIndex(playerPed, data.hash, item.metadata.tint) end
 
@@ -74,19 +97,23 @@ function Weapon.Equip(item, data, noWeaponAnim)
 
 	local ammo = item.metadata.ammo or item.throwable and 1 or 0
 
-	SetCurrentPedWeapon(playerPed, data.hash, true)
-	SetPedCurrentWeaponVisible(playerPed, true, false, false, false)
-	
 	if IS_GTAV then
+		SetCurrentPedWeapon(playerPed, data.hash, true)
+		SetPedCurrentWeaponVisible(playerPed, true, false, false, false)
+
 		SetWeaponsNoAutoswap(true)
 	end
 
 	if IS_RDR3 then
+		SetCurrentPedWeapon(playerPed, data.hash, false, 0, false, false)
+
 		Citizen.InvokeNative(0x2A7B50E, true) -- SetWeaponsNoAutoswap
 	end
 
 	SetPedAmmo(playerPed, data.hash, ammo)
-	SetTimeout(0, function() RefillAmmoInstantly(playerPed) end)
+	if IS_GTAV then
+		SetTimeout(0, function() RefillAmmoInstantly(playerPed) end)
+	end
 
 	if item.group == `GROUP_PETROLCAN` or item.group == `GROUP_FIREEXTINGUISHER` then
 		item.metadata.ammo = item.metadata.durability
@@ -102,7 +129,7 @@ function Weapon.Equip(item, data, noWeaponAnim)
 	return item, sleep
 end
 
-function Weapon.Disarm(currentWeapon, noAnim)
+function Weapon.Disarm(currentWeapon, noAnim, keepHolstered)
 	if currentWeapon?.timer then
 		currentWeapon.timer = nil
 
@@ -125,7 +152,7 @@ function Weapon.Disarm(currentWeapon, noAnim)
 			end
 
 			local sleep = anim and anim[6] or 1400
-
+			
 			Utils.PlayAnimAdvanced(sleep, anim and anim[4] or 'reaction@intimidation@1h', anim and anim[5] or 'outro', coords.x, coords.y, coords.z, 0, 0, GetEntityHeading(cache.ped), 8.0, 3.0, sleep, 50, 0)
 		end
 
@@ -138,17 +165,50 @@ function Weapon.Disarm(currentWeapon, noAnim)
 		TriggerEvent('ox_inventory:currentWeapon')
 	end
 
-	Utils.WeaponWheel()
-	RemoveAllPedWeapons(cache.ped, true)
+	if IS_RDR3 and currentWeapon then
+		if not keepHolstered then
+			local ammoHash = GetPedAmmoTypeFromWeapon(cache.ped, currentWeapon.hash)
+			Citizen.InvokeNative(0xB6CFEC32E3742779, cache.ped, ammoHash, currentWeapon.ammo, GetHashKey('REMOVE_REASON_DROPPED'))  --_REMOVE_AMMO_FROM_PED_BY_TYPE
+	
+			RemoveWeaponFromPed(cache.ped, currentWeapon.hash)
+		end
+
+		--[[ GetPedCurrentHeldWeapon]]
+		local heldWeapon = N_0x8425c5f057012dab(cache.ped)
+
+		--[[ Only use Swap if the weapon currently carried by the ped is the same one we are trying to disarm. ]]
+		if heldWeapon == currentWeapon.hash then
+			--[[ HolsterPedWeapons ]]
+			N_0x94a3c1b804d291ec(cache.ped, false, false, true, false)
+
+			TaskSwapWeapon(cache.ped, 0, 0, 0, 0)
+		end
+	end
+
+	if IS_GTAV then
+		Utils.WeaponWheel()
+		RemoveAllPedWeapons(cache.ped, true)
+	end
 end
 
 function Weapon.ClearAll(currentWeapon)
 	Weapon.Disarm(currentWeapon)
 
+	if IS_RDR3 then
+		RemoveAllPedWeapons(PlayerPedId(), true, IS_RDR3)
+	end
+
 	if client.parachute then
 		local chute = `GADGET_PARACHUTE`
 		GiveWeaponToPed(cache.ped, chute, 0, true, false)
 		SetPedGadget(cache.ped, chute, true)
+	end
+end
+
+if IS_RDR3 then
+	function GetSelectedPedWeapon(playerPed)
+		local _, wep = GetCurrentPedWeapon(playerPed, true, 0, true)
+		return wep
 	end
 end
 

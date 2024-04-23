@@ -73,7 +73,7 @@ local function newItem(data)
 	ItemList[data.name] = data
 end
 
-for type, data in pairs(lib.load('data.weapons')) do
+for type, data in pairs(lib.load(string.format('data.weapons_%s', IS_GTAV and "GTAV" or "RDR3"))) do
 	for k, v in pairs(data) do
 		v.name = k
 		v.close = type == 'Ammo' and true or false

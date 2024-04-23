@@ -90,8 +90,10 @@ local currentInventory = defaultInventory
 local function closeTrunk()
 	if currentInventory?.type == 'trunk' then
 		local coords = GetEntityCoords(playerPed, true)
-		---@todo animation for vans?
-		Utils.PlayAnimAdvanced(0, 'anim@heists@fleeca_bank@scope_out@return_case', 'trevor_action', coords.x, coords.y, coords.z, 0.0, 0.0, GetEntityHeading(playerPed), 2.0, 2.0, 1000, 49, 0.25)
+		if IS_GTAV then
+			---@todo animation for vans?
+			Utils.PlayAnimAdvanced(0, 'anim@heists@fleeca_bank@scope_out@return_case', 'trevor_action', coords.x, coords.y, coords.z, 0.0, 0.0, GetEntityHeading(playerPed), 2.0, 2.0, 1000, 49, 0.25)
+		end
 
 		CreateThread(function()
 			local entity = currentInventory.entity
@@ -503,29 +505,70 @@ local function useSlot(slot, noAnim)
 			if IsCinematicCamRendering() then SetCinematicModeActive(false) end
 
 			if currentWeapon then
-				local weaponSlot = currentWeapon.slot
-				currentWeapon = Weapon.Disarm(currentWeapon)
+				if IS_RDR3 then
+					if currentWeapon?.slot == data.slot then
+						--[[ Just keep it in the holster if it's not a throwable ]]
+						local keepHolstered = data.throwable ~= true
 
-				if weaponSlot == data.slot then return end
+						currentWeapon = Weapon.Disarm(currentWeapon, IS_RDR3, keepHolstered)
+						return
+					end
+				end
+
+				if IS_GTAV then
+					local weaponSlot = currentWeapon.slot
+					currentWeapon = Weapon.Disarm(currentWeapon)
+
+					if weaponSlot == data.slot then return end
+				end
+			end
+			
+			if IS_GTAV then
+            	GiveWeaponToPed(playerPed, data.hash, 0, false, true)
 			end
 
-            GiveWeaponToPed(playerPed, data.hash, 0, false, true)
-            SetCurrentPedWeapon(playerPed, data.hash, false)
+			if IS_RDR3 then
+				if not HasPedGotWeapon(playerPed, data.hash, 0, false) then
 
-            if data.hash ~= GetSelectedPedWeapon(playerPed) then
-                return lib.notify({ type = 'error', description = locale('cannot_use', data.label) })
-            end
+					local currentWeaponAmmo = GetAmmoInPedWeapon(playerPed, data.hash)
 
-            RemoveWeaponFromPed(cache.ped, data.hash)
+					-- RemoveAmmoFromPed
+					N_0xf4823c813cb8277d(playerPed, data.hash, currentWeaponAmmo, `REMOVE_REASON_DEBUG`)
+
+					--[[ GiveWeaponToPed ]]
+					if data.throwable then
+						Citizen.InvokeNative(0xB282DC6EBD803C75, playerPed, data.hash, tonumber(item.count), true, 0) -- GIVE_DELAYED_WEAPON_TO_PED
+					else	
+						Citizen.InvokeNative(0xB282DC6EBD803C75, playerPed, data.hash, item.metadata.ammo, true, 0) -- GIVE_DELAYED_WEAPON_TO_PED
+					end
+
+				end
+			end
+
+			if IS_GTAV then
+				SetCurrentPedWeapon(playerPed, data.hash, false)
+
+				if data.hash ~= GetSelectedPedWeapon(playerPed) then
+					return lib.notify({ type = 'error', description = locale('cannot_use', data.label) })
+				end
+
+            	RemoveWeaponFromPed(cache.ped, data.hash)
+			end
+
+			if IS_RDR3 then
+				SetCurrentPedWeapon(cache.ped, data.hash, false, 0, false, false)
+			end
+
 
 			useItem(data, function(result)
 				if result then
                     local sleep
-					currentWeapon, sleep = Weapon.Equip(item, data, noAnim)
+					currentWeapon, sleep = Weapon.Equip(item, data, noAnim or IS_RDR3)
 
 					if sleep then Wait(sleep) end
 				end
-			end, noAnim)
+			end, noAnim or IS_RDR3)
+
 		elseif currentWeapon then
 			if data.ammo then
 				if EnableWeaponWheel or currentWeapon.metadata.durability <= 0 then return end
@@ -534,7 +577,23 @@ local function useSlot(slot, noAnim)
 				local currentAmmo = GetAmmoInPedWeapon(playerPed, currentWeapon.hash)
 				local _, maxAmmo = GetMaxAmmo(playerPed, currentWeapon.hash)
 
+				local isABow = currentWeapon.hash == `WEAPON_BOW` or currentWeapon.hash == `WEAPON_BOW_IMPROVED`
+
 				if maxAmmo < clipSize then clipSize = maxAmmo end
+				
+				if IS_RDR3 then
+					if isABow then
+						--[[ 
+							Allow to use up to the maximum amount of ammunition possible when using a bow, instead
+							to use only the maximum possible in the clip, which in the arc is 1
+						--]]
+
+						--[[
+							Rockstar also sets the maximum ammo manually in her scripts ;)
+						--]]
+						maxAmmo = 5
+					end
+				end
 
 				if currentAmmo == clipSize then return end
 
@@ -600,7 +659,9 @@ local function useSlot(slot, noAnim)
 					else
 						AddAmmoToPed(playerPed, currentWeapon.hash, addAmmo)
 						Wait(100)
-						MakePedReload(playerPed)
+
+						local makePedReload = IS_GTAV and MakePedReload or N_0x79e1e511ff7efb13
+						makePedReload(playerPed)
 
 						SetTimeout(100, function()
 							while IsPedReloading(playerPed) do
@@ -747,9 +808,10 @@ local function registerCommands()
 		return client.openInventory()
 	end
 
-	local function tryOpenSecondaryInventory(self)
-		if primary and primary:getCurrentKey() == self:getCurrentKey() then
-			return warn(("secondary inventory keybind '%s' disabled (keybind cannot match primary inventory keybind)"):format(self:getCurrentKey()))
+	local function tryOpenSecondaryInventory(self) 
+		if primary:GetCurrentKey() == self:GetCurrentKey() then
+			return warn(("secondary inventory keybind '%s' disabled (keybind cannot match primary inventory keybind)"):format(self:GetCurrentKey()))
+ 
 		end
 
 		if invOpen then
@@ -1459,12 +1521,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 
 		if EnableWeaponWheel then return end
 
-		local weaponHash
-
-		if IS_GTAV then
-			weaponHash = GetSelectedPedWeapon(playerPed)
-		end
-
+		local weaponHash = GetSelectedPedWeapon(playerPed)
+	
 		if currentWeapon then
 			if weaponHash ~= currentWeapon.hash and currentWeapon.timer then
 				local weaponCount = Items[currentWeapon.name]?.count
@@ -1853,6 +1911,24 @@ end)
 
 local swapActive = false
 
+local function swapWeaponHotbar(item, data)
+	if IS_RDR3 then
+		if string.find(string.lower(item.name), "weapon") then
+			if data.fromType == "player" then
+				if data.fromSlot > 0 and data.fromSlot < 6 then
+					local playerPed = PlayerPedId()
+					local weaponHash = GetHashKey(item.name)
+					local ammoHash = GetPedAmmoTypeFromWeapon(playerPed, weaponHash)
+					local weaponAmmo = GetAmmoInPedWeapon(playerPed, item.hash)
+
+					Citizen.InvokeNative(0xB6CFEC32E3742779, playerPed, ammoHash, weaponAmmo, GetHashKey('REMOVE_REASON_DROPPED'))  --_REMOVE_AMMO_FROM_PED_BY_TYPE
+					RemoveWeaponFromPed(playerPed, weaponHash)
+				end
+			end
+		end
+	end
+end
+
 ---Synchronise and validate all item movement between the NUI and server.
 RegisterNUICallback('swapItems', function(data, cb)
     if swapActive or not invOpen or invBusy or usingItem then return cb(false) end
@@ -1901,6 +1977,16 @@ RegisterNUICallback('swapItems', function(data, cb)
 	cb(success or false)
 
 	if success then
+		--[[ Remove weapon completly from player if remove from hotbar]]
+		if IS_RDR3 then
+			local itemSlot = response and response?.items[1].item.slot or data.fromSlot
+			local item = PlayerData.inventory[itemSlot or data.fromSlot] 
+
+			if item then
+				swapWeaponHotbar(item, data)
+			end
+		end
+
         if weaponSlot and currentWeapon then
             currentWeapon.slot = weaponSlot
         end
@@ -1916,6 +2002,7 @@ RegisterNUICallback('swapItems', function(data, cb)
 		end
 	end
 end)
+
 
 RegisterNUICallback('buyItem', function(data, cb)
 	---@type boolean, false | { [1]: number, [2]: SlotWithItem, [3]: SlotWithItem | false, [4]: number}, NotifyProps
@@ -1970,7 +2057,7 @@ RegisterNUICallback('craftItem', function(data, cb)
 	end
 end)
 
-lib.callback.register('ox_inventory:getVehicleData', function(netid)
+lib.callback.register('ox_inventory:GetVehicleData', function(netid)
 	local entity = NetworkGetEntityFromNetworkId(netid)
 
 	if entity then

@@ -14,7 +14,7 @@ end)
 AddEventHandler('API:UserDropped', server.playerDropped)
 
 local function setupPlayer(User, charId)
-	local Player = User:getCharacter()
+	local Player = User:GetCharacter()
 
 	local PlayerData = {}
 	PlayerData.source = Player.source
