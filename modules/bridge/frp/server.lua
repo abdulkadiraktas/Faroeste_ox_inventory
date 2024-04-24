@@ -31,7 +31,7 @@ local function setupPlayer(User, charId)
 	server.setPlayerInventory(PlayerData)
 end
 
-AddEventHandler('API:OnUserSelectCharacter', setupPlayer)
+AddEventHandler('FRP:OnUserSelectCharacter', setupPlayer)
 
 SetTimeout(500, function()
 	for _, Player in pairs(API.GetUsers()) do setupPlayer(Player) end
