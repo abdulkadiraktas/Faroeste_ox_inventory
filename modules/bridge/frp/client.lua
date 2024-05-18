@@ -1,5 +1,9 @@
+local Tunnel = module("frp_lib", "lib/Tunnel")
+
 local Inventory = require 'modules.inventory.client'
 local Weapon = require 'modules.weapon.client'
+
+Tunnel.bindInterface("inventory", Inventory)
 
 RegisterNetEvent('API:UserLogout', client.onLogout)
 
@@ -17,7 +21,6 @@ function client.setPlayerStatus(values)
 		elseif name == "thirst" then
 			
 		elseif name == "stress" then
-
 			
 		end
 	end

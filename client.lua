@@ -120,6 +120,17 @@ local Inventory = require 'modules.inventory.client'
 ---@return boolean?
 function client.openInventory(inv, data)
 	if invOpen then
+
+		if IS_RDR3 then
+			local entity = NetworkGetEntityFromNetworkId(data.netid)
+
+			if inv == "glovebox" then
+				if DoesEntityExist(entity) and not Citizen.InvokeNative(0xAAB0FE202E9FC9F0, entity, -1) then
+					return client.closeInventory()
+				end
+			end
+		end
+
 		if not inv and currentInventory.type == 'newdrop' then
 			return client.closeInventory()
 		end
@@ -278,20 +289,23 @@ function client.openInventory(inv, data)
             if inv == 'trunk' then
                 SetTimeout(200, function()
                     ---@todo animation for vans?
-                    Utils.PlayAnim(0, 'anim@heists@prison_heiststation@cop_reactions', 'cop_b_idle', 3.0, 3.0, -1, 49, 0.0, 0, 0, 0)
 
-                    local entity = data.entity or NetworkGetEntityFromNetworkId(data.netid)
-                    currentInventory.entity = entity
-                    currentInventory.door = data.door
+					if IS_GTAV then
+                    	Utils.PlayAnim(0, 'anim@heists@prison_heiststation@cop_reactions', 'cop_b_idle', 3.0, 3.0, -1, 49, 0.0, 0, 0, 0)
 
-                    if not currentInventory.door then
-                        local vehicleHash = GetEntityModel(entity)
-                        local vehicleClass = GetVehicleClass(entity)
-                        currentInventory.door = vehicleClass == 12 and { 2, 3 } or Vehicles.Storage[vehicleHash] and 4 or 5
-                    end
+						local entity = data.entity or NetworkGetEntityFromNetworkId(data.netid)
+						currentInventory.entity = entity
+						currentInventory.door = data.door
 
-                    while currentInventory?.entity == entity and invOpen and DoesEntityExist(entity) and Inventory.CanAccessTrunk(entity) do
-                        Wait(100)
+						if not currentInventory.door then
+							local vehicleHash = GetEntityModel(entity)
+							local vehicleClass = GetVehicleClass(entity)
+							currentInventory.door = vehicleClass == 12 and { 2, 3 } or Vehicles.Storage[vehicleHash] and 4 or 5
+						end
+
+						while currentInventory?.entity == entity and invOpen and DoesEntityExist(entity) and Inventory.CanAccessTrunk(entity) do
+							Wait(100)
+						end
 					end
 
                     if invOpen then client.closeInventory() end
@@ -773,13 +787,31 @@ local function registerCommands()
 		if not IsPedInAnyVehicle(playerPed, false) or not NetworkGetEntityIsNetworked(vehicle) then return end
 
 		local vehicleHash = GetEntityModel(vehicle)
-		local vehicleClass = GetVehicleClass(vehicle)
+		local vehicleClass
 		local checkVehicle = Vehicles.Storage[vehicleHash]
+
+		local gloveId
+
+		if IS_GTAV then
+			vehicleClass = GetVehicleClass(vehicle)
+			gloveId = ('glove%d' --[[ é junto assim mesmo... não tá errado ]]):format(GetVehicleNumberPlateText(vehicle))
+		end
+
+		if IS_RDR3 then
+			local horseUUID = Entity(vehicle).state.horseUUID
+
+			if not horseUUID then
+				--[[ O cavalo não faz parte do nosso sistema. ]]
+				return
+			end
+
+			gloveId = ('glove%d' --[[ é junto assim mesmo... não tá errado ]]):format(horseUUID)
+		end
 
 		-- No storage or no glovebox
 		if (checkVehicle == 0 or checkVehicle == 2) or (not Vehicles.glovebox[vehicleClass] and not Vehicles.glovebox.models[vehicleHash]) then return end
 
-		local isOpen = client.openInventory('glovebox', { id = 'glove'..GetVehicleNumberPlateText(vehicle), netid = NetworkGetNetworkIdFromEntity(vehicle) })
+		local isOpen = client.openInventory('glovebox', { id = gloveId, netid = NetworkGetNetworkIdFromEntity(vehicle) })
 
 		if isOpen then
 			currentInventory.entity = vehicle
@@ -1038,6 +1070,7 @@ function client.closeInventory(server)
 		currentInventory = nil
 		plyState.invOpen = false
 		defaultInventory.coords = nil
+		TriggerEvent("ox_inventory:closed")
 	end
 end
 
@@ -1936,7 +1969,10 @@ RegisterNUICallback('swapItems', function(data, cb)
     swapActive = true
 
 	if data.toType == 'newdrop' then
-		if cache.vehicle or IsPedFalling(playerPed) then return cb(false) end
+		if cache.vehicle or IsPedFalling(playerPed) then
+			swapActive = false
+			return cb(false)
+		end
 
 		local coords = GetEntityCoords(playerPed)
 
@@ -1958,6 +1994,10 @@ RegisterNUICallback('swapItems', function(data, cb)
 			end
 		else
 			data.coords = coords
+		end
+
+		if shared.persistent_items then
+			data.coords = exports["persistent-items"]:getFromCoordsFromPlayer(coords)
 		end
     end
 

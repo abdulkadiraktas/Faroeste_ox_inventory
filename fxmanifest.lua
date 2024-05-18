@@ -17,7 +17,7 @@ dependencies {
 }
 
 shared_script '@ox_lib/init.lua'
-shared_script '@frp_core/lib/utils.lua'
+shared_script '@frp_lib/lib/utils.lua'
 
 ox_libs {
     'locale',
@@ -41,6 +41,8 @@ files {
     'web/build/index.html',
     'web/build/assets/*.js',
     'web/build/assets/*.css',
+    'web/build/assets/*.png',
+    'web/build/assets/*.ttf',
     'web/images/*.png',
     'modules/**/shared.lua',
     'modules/**/client.lua',

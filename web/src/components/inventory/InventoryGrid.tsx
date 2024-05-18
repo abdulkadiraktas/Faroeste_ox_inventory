@@ -5,6 +5,7 @@ import InventorySlot from './InventorySlot';
 import { getTotalWeight } from '../../helpers';
 import { useAppSelector } from '../../store';
 import { useIntersection } from '../../hooks/useIntersection';
+import InventoryControl from './InventoryControl';
 
 const PAGE_SIZE = 30;
 
@@ -14,9 +15,33 @@ const InventoryGrid: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
     [inventory.maxWeight, inventory.items]
   );
   const [page, setPage] = useState(0);
+  const [inventoryVisible, setInventoryVisible] = useState<boolean>(false);
   const containerRef = useRef(null);
   const { ref, entry } = useIntersection({ threshold: 0.5 });
   const isBusy = useAppSelector((state) => state.inventory.isBusy);
+
+  useEffect(() => {        
+    checkInventoryNeedOpen()
+  }, [inventory])
+
+  const checkInventoryNeedOpen = function()
+    {
+        if (inventory.type == "player")
+        {
+          setInventoryVisible(true)
+        }
+        else
+        {
+          if ( !inventory.id )
+          {
+              setInventoryVisible(false)
+          }
+          else
+          {
+              setInventoryVisible(true)
+          }
+        }
+    }
 
   useEffect(() => {
     if (entry && entry.isIntersecting) {
@@ -24,18 +49,17 @@ const InventoryGrid: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
     }
   }, [entry]);
   return (
-    <>
-      <div className="inventory-grid-wrapper" style={{ pointerEvents: isBusy ? 'none' : 'auto' }}>
+    <div className={`rootInventory`}>
+    
+      {inventory.type == "player"?             
+          <InventoryControl />
+      : ''}
+
+      <div className={`inventory-grid-wrapper inventory_background ${inventoryVisible ? 'active' : ''}`}  style={{ pointerEvents: isBusy ? 'none' : 'auto' }}>
         <div>
           <div className="inventory-grid-header-wrapper">
             <p>{inventory.label}</p>
-            {inventory.maxWeight && (
-              <p>
-                {weight / 1000}/{inventory.maxWeight / 1000}kg
-              </p>
-            )}
           </div>
-          <WeightBar percent={inventory.maxWeight ? (weight / inventory.maxWeight) * 100 : 0} />
         </div>
         <div className="inventory-grid-container" ref={containerRef}>
           <>
@@ -51,8 +75,25 @@ const InventoryGrid: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
             ))}
           </>
         </div>
+
+        <div className="bottom-weight">
+
+            {inventory.maxWeight && (
+              <span className="weight-label">
+                {weight / 1000}
+              </span>
+            )}
+
+            <WeightBar percent={inventory.maxWeight ? (weight / inventory.maxWeight) * 100 : 0} />
+            
+            {inventory.maxWeight && (
+              <span className="weight-label">
+                {inventory.maxWeight / 1000}kg
+              </span>
+            )}
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,11 +1,12 @@
-local Tunnel = module("frp_core", "lib/Tunnel")
-local Proxy = module("frp_core", "lib/Proxy")
+local Tunnel = module("frp_lib", "lib/Tunnel")
+local Proxy = module("frp_lib", "lib/Proxy")
 
 API = Proxy.getInterface("API")
-cAPI = Tunnel.getInterface("API")
 
 local Inventory = require 'modules.inventory.server'
 local Items = require 'modules.items.server'
+
+Proxy.addInterface("inventory", Inventory)
 
 AddEventHandler('API:ReleaseCharacter', function(playerId)
 	server.playerDropped(playerId)

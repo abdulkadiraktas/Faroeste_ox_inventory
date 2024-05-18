@@ -132,7 +132,9 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             : undefined,
         opacity: isDragging ? 0.4 : 1.0,
         backgroundImage: `url(${item?.name ? getItemUrl(item as SlotWithItem) : 'none'}`,
-        border: isOver ? '1px dashed rgba(255,255,255,0.4)' : '',
+        border: isOver ? '1px solid rgba(255,255,255,0.5)' : '1px inset rgba(200,200,200,0.1)',
+        borderColor: item.name == null ? 'rgba(200,200,200, 0.05)' : 'rgba(200,200,200,0.1)',
+        backgroundColor: item.name == null ? 'rgba(40, 40, 40, 0.20)' : 'rgba(60, 60, 60, 0.35)',
       }}
     >
       {isSlotWithItem(item) && (
@@ -169,7 +171,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                       })}g `
                   : ''}
               </p>
-              <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
+              <span>{item.count > 1 ? item.name == "money" ? (item.count / 100).toFixed(2) : item.count.toLocaleString('en-us') : ''}</span>
             </div>
           </div>
           <div>
@@ -189,6 +191,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                         width: '2vh',
                         backfaceVisibility: 'hidden',
                         transform: 'translateZ(0)',
+                        zIndex: 3
                       }}
                     />
                     <p>{item.price.toLocaleString('en-us')}</p>

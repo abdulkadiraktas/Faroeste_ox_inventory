@@ -1,16 +1,35 @@
-$mainColor: #22232c;
+$mainColor: rgb(45, 45, 45);
 $textColor: #c1c2c5;
-$mainFont: Roboto;
 
-$secondaryColor: rgba(12, 12, 12, 0.4);
+@font-face {
+  font-family: Hapna;
+  src: url('./fonts/HapnaSlabSerif-DemiBold.ttf'); 
+}
+@font-face {
+  font-family: Catalogue;
+  src: url('./fonts/RDRCatalogueBold-Bold.ttf'); 
+}
+@font-face {
+  font-family: Redemption;
+  src: url('./fonts/Redemption.ttf'); 
+}
+
+$mainFont: Roboto;
+$secondFont: Hapna;
+$thirdFont: Redemption;
+
+$secondaryColor: rgb(43, 43, 43, 0.75);
 $secondaryColorHighlight: #33343F;
 $secondaryColorLight: rgba(0, 0, 0, 0.5);
 $secondaryColorDark: rgba(12, 12, 12, 0.8);
 
+$backgroundColor:rgba(0, 0, 0, 0.9);
+$borderRadius: 0.25vh;
+
 $gridCols: 5;
 $gridRows: 5;
-$gridSize: 10.2vh;
-$gridGap: 2px;
+$gridSize: 7.3vh;
+$gridGap: 3.7px;
 $containerSize: calc(#{$gridRows} * #{$gridSize + 0.22vh} + #{$gridRows} * #{$gridGap});
 
 body {
@@ -37,10 +56,19 @@ code {
   display: none;
 }
 
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.5) !important;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background:  #2e2e2e !important;
+}
+
 p {
   margin: 0;
   padding: 0;
-  font-family: $mainFont;
+  font-family: $secondFont;  
 }
 
 input[type='number']::-webkit-inner-spin-button,
@@ -115,6 +143,27 @@ button:active {
   image-rendering: -webkit-optimize-contrast;
 }
 
+.rootInventory 
+{
+  display:flex;
+  flex-direction: column;
+  
+  justify-content: center;
+  align-items: center;
+  -webkit-scrollbar: 3px !important;
+}
+
+.inventory_background {
+  background-color: $backgroundColor;
+  background: url(./background_new_inventario.png);
+  background-size: 100%;
+  background-position: center;
+  background-repeat: no-repeat;    
+  padding: 2vh 2.2vh;
+  margin: 0 3vh;
+  display:none;
+}
+
 .inventory-wrapper {
   display: flex;
   flex-direction: row;
@@ -129,43 +178,59 @@ button:active {
   display: flex;
 
   .inventory-control-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    margin-top: -5.5vh;
+    display:flex;
+    flex-direction: row;
     justify-content: center;
-    align-items: center;
+    max-width: 49vh;
+    max-height: 5vh;
+
+    padding: 0.5vh 2vh;
+
+    background: url(./background_new_inventario.png);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;    
   }
 
   .inventory-control-input {
-    transition: 200ms;
-    padding: 16px 8px;
-    border-radius: 2.5%;
-    font-family: $mainFont;
-    font-size: 16px;
+    background-color: $secondaryColor;
+    border-radius: $borderRadius;
+    height: 2.4vh;
+    padding: 0.5vh 0.8vh;
     text-align: center;
+    width: auto;
+    font-size: 1.5vh;
+    margin: 0.4vh;
+    color: $textColor;
+    font-family: $secondFont;
+    
     outline: none;
     border: none;
-    color: #fff;
-    background-color: $secondaryColor;
+
+    &:hover {
+      background-color: $mainColor;
+      opacity: 0.8;
+    }
     &:focus-within {
-      background-color: $secondaryColorDark;
+      background-color: $mainColor;
     }
   }
 
   .inventory-control-button {
-    font-size: 14px;
-    color: #fff;
     background-color: $secondaryColor;
-    transition: 200ms;
-    padding: 12px 8px;
-    border-radius: 2.5%;
-    border: none;
-    text-transform: uppercase;
-    font-family: $mainFont;
-    width: 100%;
-    font-weight: 500;
+    border: 1px solid rgba(0, 0, 0, 0.0);
+    border-radius: $borderRadius;
+    padding: 0.5vh 0.8vh;
+    text-align: center;
+    width: auto;
+    margin: 0.8vh;
+    color: $textColor;
+    font-family: $secondFont;  
+  
     &:hover {
-      background-color: $secondaryColorDark;
+        background-color: $mainColor;
+        opacity: 0.8;
     }
   }
 }
@@ -258,10 +323,11 @@ button:active {
 
 // inventory grids
 .inventory-grid-wrapper {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: calc($gridGap * 2);
 }
+
 .inventory-grid-header-wrapper {
   display: flex;
   flex-direction: row;
@@ -271,6 +337,10 @@ button:active {
   }
 }
 
+.active{
+  display:flex;
+}
+
 .inventory-grid-container {
   display: grid;
   height: $containerSize;
@@ -278,6 +348,11 @@ button:active {
   grid-auto-rows: $gridSize + 0.22vh;
   gap: $gridGap;
   overflow-y: scroll;
+}
+
+.inventory-grid-container::-webkit-scrollbar {
+  display: block; 
+  width: 3px;
 }
 
 // inventory slots
@@ -296,6 +371,7 @@ button:active {
 }
 
 .inventory-slot-label-box {
+  display: none;
   background-color: $mainColor;
   color: $textColor;
   text-align: center;
@@ -318,14 +394,26 @@ button:active {
 }
 
 .inventory-slot-number {
-  background-color: white;
-  color: black;
-  height: 12px;
+  color: $textColor;
+
   border-top-left-radius: 0.25vh;
   border-bottom-right-radius: 0.25vh;
-  padding: 3px;
-  font-size: 12px;
-  font-family: $mainFont;
+
+  font-family: $thirdFont;
+  position: absolute;
+  font-size: 5vh;
+
+  height: 100%;
+  width: 100%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+
+  opacity: 0.1;
+  user-select: none;
+  pointer-events: none;
 }
 
 .item-slot-wrapper {
@@ -351,12 +439,31 @@ button:active {
 
 .item-slot-info-wrapper {
   display: flex;
-  flex-direction: row;
-  align-self: flex-end;
-  padding: 3px;
-  gap: 3px;
+  align-items: end;
+  height: 100%;
+
   p {
-    font-size: 12px;
+    display:none;
+  }
+
+  span {
+      font-weight: bold;
+      font-family: $secondFont;  
+
+      display: flex;
+      // color:black;   
+      position:absolute;
+      justify-content: center;
+      align-items: center;
+
+      right:0;
+      bottom:0;
+
+      font-size: 0.70em;
+      padding: 0.4em 0.6em;
+
+      // background-color: rgba(255,255,255,1);
+      border-radius: 50%;
   }
 }
 
@@ -509,13 +616,29 @@ button:active {
   overflow: hidden;
 }
 
-.weight-bar {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px inset rgba(0, 0, 0, 0.1);
-  height: 0.8vh;
-  border-radius: 5%;
-  overflow: hidden;
+.bottom-weight {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+
+  align-items: center;
+  margin-bottom: 0.5vh;
+  font-family: $secondFont;
 }
+
+.weight-bar {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px inset rgba(0, 0, 0, 0.1);
+  height: 0.28em;
+  border-radius: $borderRadius;
+  overflow: hidden;
+  width: 100%;
+}
+
+.weight-label {
+  margin: 0 0.5em ;
+}
+
 
 .transition-fade-enter {
   opacity: 0;
@@ -552,3 +675,4 @@ button:active {
   transform: translateY(200px);
   transition: all 200ms;
 }
+

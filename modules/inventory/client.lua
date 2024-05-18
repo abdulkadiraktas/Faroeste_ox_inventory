@@ -59,29 +59,52 @@ end
 
 function Inventory.OpenTrunk(entity)
     ---@type number | number[] | nil
-    local door = Inventory.CanAccessTrunk(entity)
+    local door
 
-    if not door then return end
+	if IS_GTAV then
+		door = Inventory.CanAccessTrunk(entity)
+		if not door then return end
 
-    if GetVehicleDoorLockStatus(entity) > 1 then
-        return lib.notify({ id = 'vehicle_locked', type = 'error', description = locale('vehicle_locked') })
-    end
+		if GetVehicleDoorLockStatus(entity) > 1 then
+			return lib.notify({ id = 'vehicle_locked', type = 'error', description = locale('vehicle_locked') })
+		end
+	end
 
-    local plate = GetVehicleNumberPlateText(entity)
-    local invId = 'trunk'..plate
+	local netId = NetworkGetNetworkIdFromEntity(entity)
+    local invId
+
+	if IS_GTAV then
+		local plate = GetVehicleNumberPlateText(entity)
+		invId = string.format('trunk%s', plate)
+	end
+
+
+	if IS_RDR3 then
+
+		local vehicleUUID
+		if Entity(entity).state.wagonId then 
+			vehicleUUID = Entity(entity).state.wagonId
+		else
+			vehicleUUID = "temp:" .. netId
+		end
+
+		invId = vehicleUUID
+	end
+
     local coords = GetEntityCoords(entity)
-
     TaskTurnPedToFaceCoord(cache.ped, coords.x, coords.y, coords.z, 0)
 
-    if not client.openInventory('trunk', { id = invId, netid = NetworkGetNetworkIdFromEntity(entity), entityid = entity, door = door }) then return end
+    if not client.openInventory('trunk', { id = invId, netid = netId, entityid = entity, door = door }) then return end
 
-    if type(door) == 'table' then
-        for i = 1, #door do
-            SetVehicleDoorOpen(entity, door[i], false, false)
-        end
-    else
-        SetVehicleDoorOpen(entity, door --[[@as number]], false, false)
-    end
+	if IS_GTAV then
+		if type(door) == 'table' then
+			for i = 1, #door do
+				SetVehicleDoorOpen(entity, door[i], false, false)
+			end
+		else
+			SetVehicleDoorOpen(entity, door --[[@as number]], false, false)
+		end
+	end
 end
 
 if shared.target then
